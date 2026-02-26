@@ -13,6 +13,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        display: ['"Space Grotesk"', 'sans-serif'],
+        sans: ['"Inter"', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -47,6 +51,11 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        streak: {
+          DEFAULT: "hsl(var(--streak))",
+          foreground: "hsl(var(--streak-foreground))",
+        },
+        success: "hsl(var(--success))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -57,6 +66,13 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        chart: {
+          1: "hsl(var(--chart-1))",
+          2: "hsl(var(--chart-2))",
+          3: "hsl(var(--chart-3))",
+          4: "hsl(var(--chart-4))",
+          5: "hsl(var(--chart-5))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -65,25 +81,22 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "pulse-glow": {
+          "0%, 100%": { opacity: "0.4" },
+          "50%": { opacity: "1" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
       },
     },
   },
