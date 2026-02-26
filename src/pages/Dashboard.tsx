@@ -1,11 +1,15 @@
 import { motion } from 'framer-motion';
 import { useHabitStore, getToday } from '@/lib/habitStore';
+import { useAuthStore } from '@/lib/authStore';
 import HabitCard from '@/components/HabitCard';
 import CircularProgress from '@/components/CircularProgress';
-import { Flame } from 'lucide-react';
+import { Flame, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const { habits, toggleCompletion, getCompletionsForDate, getStreak } = useHabitStore();
+  const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
   const today = getToday();
   const todayData = getCompletionsForDate(today);
   const completedCount = todayData.filter((d) => d.completed).length;
@@ -22,10 +26,20 @@ const Dashboard = () => {
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
+        className="mb-8 flex items-start justify-between"
       >
-        <p className="text-sm text-muted-foreground">{dayName}</p>
-        <h1 className="font-display text-3xl font-bold text-foreground">{dateStr}</h1>
+        <div>
+          <p className="text-sm text-muted-foreground">{dayName}</p>
+          <h1 className="font-display text-3xl font-bold text-foreground">{dateStr}</h1>
+          {user && <p className="text-xs text-muted-foreground mt-1">Hi, {user.name} 👋</p>}
+        </div>
+        <button
+          onClick={() => { logout(); navigate('/login'); }}
+          className="mt-1 flex items-center gap-1.5 rounded-xl bg-secondary/60 px-3 py-2 text-xs text-muted-foreground hover:text-destructive transition-colors"
+        >
+          <LogOut size={14} />
+          Logout
+        </button>
       </motion.div>
 
       <motion.div
