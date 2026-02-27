@@ -8,13 +8,14 @@ export interface Habit {
   frequency: 'daily' | 'weekly' | 'monthly';
   targetDays?: number[];
   reminderTime?: string;
+  customSound?: string;
   createdAt: string;
   completions: Record<string, boolean>;
 }
 
 interface HabitStore {
   habits: Habit[];
-  addHabit: (habit: Omit<Habit, 'id' | 'createdAt' | 'completions'>) => void;
+  addHabit: (habit: Omit<Habit, 'id' | 'createdAt' | 'completions'>) => Habit;
   removeHabit: (id: string) => void;
   toggleCompletion: (id: string, date: string) => void;
   getCompletionsForDate: (date: string) => { habit: Habit; completed: boolean }[];
@@ -92,6 +93,7 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
       saveHabits(habits);
       return { habits };
     });
+    return newHabit;
   },
 
   removeHabit: (id) => {
