@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useHabitStore } from '@/lib/habitStore';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import CircularProgress from '@/components/CircularProgress';
+import { Filter } from 'lucide-react';
 
 const CHART_COLORS = [
   'hsl(160, 84%, 44%)',
@@ -13,6 +15,22 @@ const CHART_COLORS = [
 
 const Analytics = () => {
   const { habits, getCompletionRate, getStreak } = useHabitStore();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(habits.map((h) => h.id)));
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        if (next.size > 1) next.delete(id); // keep at least one
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const selectAll = () => setSelectedIds(new Set(habits.map((h) => h.id)));
+  const filtered = habits.filter((h) => selectedIds.has(h.id));
 
   const weeklyData = (() => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -23,24 +41,59 @@ const Analytics = () => {
       const d = new Date(today);
       d.setDate(d.getDate() + offset);
       const dateKey = d.toISOString().split('T')[0];
-      const completed = habits.filter((h) => h.completions[dateKey]).length;
-      return { name: label, completed, total: habits.length };
+      const completed = filtered.filter((h) => h.completions[dateKey]).length;
+      return { name: label, completed, total: filtered.length };
     });
   })();
 
-  const pieData = habits.map((h) => ({
+  const pieData = filtered.map((h) => ({
     name: h.name,
     value: getCompletionRate(h.id, 30),
   }));
 
-  const overallRate = habits.length > 0
-    ? Math.round(habits.reduce((acc, h) => acc + getCompletionRate(h.id, 7), 0) / habits.length)
+  const overallRate = filtered.length > 0
+    ? Math.round(filtered.reduce((acc, h) => acc + getCompletionRate(h.id, 7), 0) / filtered.length)
     : 0;
 
   return (
     <div className="min-h-screen bg-background px-5 pb-24 pt-12">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="mb-8 font-display text-3xl font-bold text-foreground">Analytics</h1>
+        <h1 className="mb-4 font-display text-3xl font-bold text-foreground">Analytics</h1>
+      </motion.div>
+
+      {/* Filter chips */}
+      <motion.div
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="mb-6"
+      >
+        <div className="flex items-center gap-2 mb-2">
+          <Filter size={14} className="text-muted-foreground" />
+          <span className="text-xs font-medium text-muted-foreground">Filter habits</span>
+          {selectedIds.size < habits.length && (
+            <button onClick={selectAll} className="ml-auto text-xs text-primary hover:underline">Select all</button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {habits.map((h) => {
+            const active = selectedIds.has(h.id);
+            return (
+              <button
+                key={h.id}
+                onClick={() => toggleSelection(h.id)}
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                  active
+                    ? 'gradient-primary text-primary-foreground glow-primary'
+                    : 'bg-secondary text-muted-foreground'
+                }`}
+              >
+                <span>{h.icon}</span>
+                <span className="truncate max-w-[80px]">{h.name}</span>
+              </button>
+            );
+          })}
+        </div>
       </motion.div>
 
       <motion.div
@@ -49,15 +102,11 @@ const Analytics = () => {
         transition={{ delay: 0.1 }}
         className="glass-card mb-6 flex flex-col items-center p-6"
       >
-        <CircularProgress
-          value={overallRate}
-          size={140}
-          strokeWidth={10}
-          label={`${overallRate}%`}
-          sublabel="weekly avg"
-        />
+        <CircularProgress value={overallRate} size={140} strokeWidth={10} label={`${overallRate}%`} sublabel="weekly avg" />
         <h2 className="mt-4 font-display font-semibold text-foreground">Overall Completion</h2>
-        <p className="text-sm text-muted-foreground">Last 7 days average</p>
+        <p className="text-sm text-muted-foreground">
+          {filtered.length} of {habits.length} habits · Last 7 days
+        </p>
       </motion.div>
 
       <motion.div
@@ -89,7 +138,7 @@ const Analytics = () => {
         className="glass-card mb-6 p-5"
       >
         <h3 className="mb-4 font-display font-semibold text-foreground">30-Day Breakdown</h3>
-        {habits.length > 0 ? (
+        {filtered.length > 0 ? (
           <div className="flex items-center gap-4">
             <ResponsiveContainer width={120} height={120}>
               <PieChart>
@@ -101,16 +150,11 @@ const Analytics = () => {
               </PieChart>
             </ResponsiveContainer>
             <div className="flex-1 space-y-2">
-              {habits.map((h, i) => (
+              {filtered.map((h, i) => (
                 <div key={h.id} className="flex items-center gap-2">
-                  <span
-                    className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
-                  />
+                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
                   <span className="flex-1 truncate text-sm text-foreground">{h.name}</span>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {getCompletionRate(h.id, 30)}%
-                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">{getCompletionRate(h.id, 30)}%</span>
                 </div>
               ))}
             </div>
@@ -128,7 +172,7 @@ const Analytics = () => {
       >
         <h3 className="mb-4 font-display font-semibold text-foreground">Streaks</h3>
         <div className="space-y-3">
-          {habits.map((h) => {
+          {filtered.map((h) => {
             const streak = getStreak(h.id);
             return (
               <div key={h.id} className="flex items-center gap-3">
@@ -141,8 +185,8 @@ const Analytics = () => {
               </div>
             );
           })}
-          {habits.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground">Add habits to see streaks</p>
+          {filtered.length === 0 && (
+            <p className="text-center text-sm text-muted-foreground">Select habits to see streaks</p>
           )}
         </div>
       </motion.div>
