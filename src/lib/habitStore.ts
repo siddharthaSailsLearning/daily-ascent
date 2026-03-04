@@ -97,6 +97,17 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
     return newHabit;
   },
 
+  updateHabit: (id, updates) => {
+    set((state) => {
+      const habits = state.habits.map((h) => {
+        if (h.id !== id) return h;
+        return { ...h, ...updates };
+      });
+      saveHabits(habits);
+      return { habits };
+    });
+  },
+
   removeHabit: (id) => {
     set((state) => {
       const habits = state.habits.filter((h) => h.id !== id);
