@@ -16,6 +16,7 @@ export interface Habit {
 interface HabitStore {
   habits: Habit[];
   addHabit: (habit: Omit<Habit, 'id' | 'createdAt' | 'completions'>) => Habit;
+  updateHabit: (id: string, updates: Partial<Omit<Habit, 'id' | 'createdAt' | 'completions'>>) => void;
   removeHabit: (id: string) => void;
   toggleCompletion: (id: string, date: string) => void;
   getCompletionsForDate: (date: string) => { habit: Habit; completed: boolean }[];
@@ -94,6 +95,17 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
       return { habits };
     });
     return newHabit;
+  },
+
+  updateHabit: (id, updates) => {
+    set((state) => {
+      const habits = state.habits.map((h) => {
+        if (h.id !== id) return h;
+        return { ...h, ...updates };
+      });
+      saveHabits(habits);
+      return { habits };
+    });
   },
 
   removeHabit: (id) => {
