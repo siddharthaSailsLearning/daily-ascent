@@ -16,6 +16,7 @@ export interface Habit {
 interface HabitStore {
   habits: Habit[];
   addHabit: (habit: Omit<Habit, 'id' | 'createdAt' | 'completions'>) => Habit;
+  updateHabit: (id: string, updates: Partial<Omit<Habit, 'id' | 'createdAt' | 'completions'>>) => void;
   removeHabit: (id: string) => void;
   toggleCompletion: (id: string, date: string) => void;
   getCompletionsForDate: (date: string) => { habit: Habit; completed: boolean }[];
