@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useMemo } from 'react';
 import { useHabitStore } from '@/lib/habitStore';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import CircularProgress from '@/components/CircularProgress';
@@ -15,13 +14,13 @@ const CHART_COLORS = [
 
 const Analytics = () => {
   const { habits, getCompletionRate, getStreak } = useHabitStore();
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(habits.map((h) => h.id)));
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(habits.map((h) => h.id)));
 
   const toggleSelection = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
-        if (next.size > 1) next.delete(id); // keep at least one
+        if (next.size > 1) next.delete(id);
       } else {
         next.add(id);
       }
@@ -30,9 +29,9 @@ const Analytics = () => {
   };
 
   const selectAll = () => setSelectedIds(new Set(habits.map((h) => h.id)));
-  const filtered = habits.filter((h) => selectedIds.has(h.id));
+  const filtered = useMemo(() => habits.filter((h) => selectedIds.has(h.id)), [habits, selectedIds]);
 
-  const weeklyData = (() => {
+  const weeklyData = useMemo(() => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const today = new Date();
     const dayOfWeek = today.getDay();
@@ -44,30 +43,28 @@ const Analytics = () => {
       const completed = filtered.filter((h) => h.completions[dateKey]).length;
       return { name: label, completed, total: filtered.length };
     });
-  })();
+  }, [filtered]);
 
-  const pieData = filtered.map((h) => ({
-    name: h.name,
-    value: getCompletionRate(h.id, 30),
-  }));
+  const pieData = useMemo(
+    () => filtered.map((h) => ({ name: h.name, value: getCompletionRate(h.id, 30) })),
+    [filtered, habits]
+  );
 
-  const overallRate = filtered.length > 0
-    ? Math.round(filtered.reduce((acc, h) => acc + getCompletionRate(h.id, 7), 0) / filtered.length)
-    : 0;
+  const overallRate = useMemo(
+    () => filtered.length > 0
+      ? Math.round(filtered.reduce((acc, h) => acc + getCompletionRate(h.id, 7), 0) / filtered.length)
+      : 0,
+    [filtered, habits]
+  );
 
   return (
     <div className="min-h-screen bg-background px-5 pb-24 pt-12">
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+      <div>
         <h1 className="mb-4 font-display text-3xl font-bold text-foreground">Analytics</h1>
-      </motion.div>
+      </div>
 
       {/* Filter chips */}
-      <motion.div
-        initial={{ opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
-        className="mb-6"
-      >
+      <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
           <Filter size={14} className="text-muted-foreground" />
           <span className="text-xs font-medium text-muted-foreground">Filter habits</span>
@@ -94,27 +91,17 @@ const Analytics = () => {
             );
           })}
         </div>
-      </motion.div>
+      </div>
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.1 }}
-        className="glass-card mb-6 flex flex-col items-center p-6"
-      >
+      <div className="glass-card mb-6 flex flex-col items-center p-6">
         <CircularProgress value={overallRate} size={140} strokeWidth={10} label={`${overallRate}%`} sublabel="weekly avg" />
         <h2 className="mt-4 font-display font-semibold text-foreground">Overall Completion</h2>
         <p className="text-sm text-muted-foreground">
           {filtered.length} of {habits.length} habits · Last 7 days
         </p>
-      </motion.div>
+      </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="glass-card mb-6 p-5"
-      >
+      <div className="glass-card mb-6 p-5">
         <h3 className="mb-4 font-display font-semibold text-foreground">This Week</h3>
         <ResponsiveContainer width="100%" height={180}>
           <BarChart data={weeklyData}>
@@ -129,14 +116,9 @@ const Analytics = () => {
             </defs>
           </BarChart>
         </ResponsiveContainer>
-      </motion.div>
+      </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="glass-card mb-6 p-5"
-      >
+      <div className="glass-card mb-6 p-5">
         <h3 className="mb-4 font-display font-semibold text-foreground">30-Day Breakdown</h3>
         {filtered.length > 0 ? (
           <div className="flex items-center gap-4">
@@ -162,14 +144,9 @@ const Analytics = () => {
         ) : (
           <p className="text-center text-sm text-muted-foreground">No data yet</p>
         )}
-      </motion.div>
+      </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="glass-card p-5"
-      >
+      <div className="glass-card p-5">
         <h3 className="mb-4 font-display font-semibold text-foreground">Streaks</h3>
         <div className="space-y-3">
           {filtered.map((h) => {
@@ -189,7 +166,7 @@ const Analytics = () => {
             <p className="text-center text-sm text-muted-foreground">Select habits to see streaks</p>
           )}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };
