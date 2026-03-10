@@ -81,7 +81,7 @@ const App = () => {
 const AppBottomNav = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   if (!isAuthenticated) return null;
-  return <BottomNav>;
+  return <BottomNav />;
 };
 
 export default App;
