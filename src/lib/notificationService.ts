@@ -65,7 +65,7 @@ export const scheduleHabitReminder = async (
           repeats: true,
           allowWhileIdle: true,
         },
-        sound: 'beep.wav',
+        sound: 'beep.mp3',
         smallIcon: 'ic_launcher',
         largeIcon: 'ic_launcher',
         channelId: 'habit-alarms',
