@@ -108,7 +108,7 @@ export const createNotificationChannel = async () => {
       importance: 5, // MAX importance - shows as heads-up notification with sound
       visibility: 1, // public
       vibration: true,
-      sound: 'beep.wav',
+      sound: 'beep.mp3',
       lights: true,
       lightColor: '#22c55e',
     });
