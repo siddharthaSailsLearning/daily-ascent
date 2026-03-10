@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useHabitStore, formatDate } from '@/lib/habitStore';
 
@@ -17,30 +16,35 @@ const CalendarPage = () => {
   const prevMonth = () => setCurrentMonth(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentMonth(new Date(year, month + 1, 1));
 
-  const getCompletionForDay = (day: number) => {
-    const date = formatDate(new Date(year, month, day));
-    let completed = 0;
-    let total = habits.length;
-    habits.forEach((h) => {
-      if (h.completions[date]) completed++;
-    });
-    if (total === 0) return 0;
-    return completed / total;
-  };
+  // Memoize completion map for the entire month
+  const completionMap = useMemo(() => {
+    const map: Record<number, number> = {};
+    const total = habits.length;
+    if (total === 0) return map;
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = formatDate(new Date(year, month, day));
+      let completed = 0;
+      for (const h of habits) {
+        if (h.completions[date]) completed++;
+      }
+      map[day] = completed / total;
+    }
+    return map;
+  }, [habits, year, month, daysInMonth]);
 
   const today = new Date();
-  const isToday = (day: number) =>
-    today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+  const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+  const todayDate = today.getDate();
 
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
     <div className="min-h-screen bg-background px-5 pb-24 pt-12">
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+      <div>
         <h1 className="mb-8 font-display text-3xl font-bold text-foreground">Calendar</h1>
-      </motion.div>
+      </div>
 
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="glass-card p-5">
+      <div className="glass-card p-5">
         <div className="mb-5 flex items-center justify-between">
           <button onClick={prevMonth} className="rounded-lg bg-secondary p-2 text-secondary-foreground">
             <ChevronLeft size={18} />
@@ -65,16 +69,13 @@ const CalendarPage = () => {
           ))}
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
-            const completion = getCompletionForDay(day);
-            const todayMark = isToday(day);
+            const completion = completionMap[day] || 0;
+            const isToday = isCurrentMonth && todayDate === day;
             return (
-              <motion.div
+              <div
                 key={day}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.01 * day }}
-                className={`relative flex h-10 items-center justify-center rounded-lg text-sm font-medium transition-all ${
-                  todayMark ? 'ring-2 ring-primary' : ''
+                className={`relative flex h-10 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                  isToday ? 'ring-2 ring-primary' : ''
                 } ${
                   completion >= 1
                     ? 'gradient-primary text-primary-foreground'
@@ -84,7 +85,7 @@ const CalendarPage = () => {
                 }`}
               >
                 {day}
-              </motion.div>
+              </div>
             );
           })}
         </div>
@@ -100,7 +101,7 @@ const CalendarPage = () => {
             <span className="h-3 w-3 rounded bg-secondary" /> None
           </span>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

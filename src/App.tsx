@@ -1,21 +1,30 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "@/lib/authStore";
-import { createNotificationChannel, requestNotificationPermission } from "@/lib/notificationService";
+import { createNotificationChannel, requestNotificationPermission, initNotificationListeners } from "@/lib/notificationService";
 import BottomNav from "./components/BottomNav";
-import Dashboard from "./pages/Dashboard";
-import AddHabit from "./pages/AddHabit";
-import CalendarPage from "./pages/CalendarPage";
-import Analytics from "./pages/Analytics";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// Lazy load pages to reduce initial bundle and memory usage
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const AddHabit = lazy(() => import("./pages/AddHabit"));
+const CalendarPage = lazy(() => import("./pages/CalendarPage"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 min - reduce unnecessary refetches
+      retry: 1,
+    },
+  },
+});
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -29,11 +38,18 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const PageLoader = () => (
+  <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+  </div>
+);
+
 const App = () => {
   useEffect(() => {
-    // Initialize notification channel and request permissions on app start
+    // Initialize notification system once on mount
     createNotificationChannel();
     requestNotificationPermission();
+    initNotificationListeners();
   }, []);
 
   return (
@@ -43,15 +59,17 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <div className="mx-auto max-w-md">
-            <Routes>
-              <Route path="/login" element={<AuthRoute><Login /></AuthRoute>} />
-              <Route path="/signup" element={<AuthRoute><Signup /></AuthRoute>} />
-              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/add" element={<ProtectedRoute><AddHabit /></ProtectedRoute>} />
-              <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
-              <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/login" element={<AuthRoute><Login /></AuthRoute>} />
+                <Route path="/signup" element={<AuthRoute><Signup /></AuthRoute>} />
+                <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/add" element={<ProtectedRoute><AddHabit /></ProtectedRoute>} />
+                <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+                <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
             <AppBottomNav />
           </div>
         </BrowserRouter>
